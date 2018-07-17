@@ -5,10 +5,10 @@
 #pragma comment(lib,"shlwapi")
 #pragma comment(lib,"user32")
 
-#ifdef NDEBUG
-    #define DEBUG_MSG(str) do { } while ( false )
- #else
+#ifdef _DEBUG
     #define DEBUG_MSG(str) do { std::wcout << str << std::endl; } while( false )
+ #else
+    #define DEBUG_MSG(str) do { } while ( false )
 #endif
 
 // Thanks: https://stackoverflow.com/a/36545162/4297146
@@ -349,6 +349,7 @@ WinToast::WinToast() :
 }
 
 WinToast::~WinToast() {
+    clear();
     if (_hasCoInitialized) {
         CoUninitialize();
     }
@@ -452,7 +453,8 @@ bool WinToast::initialize(_Out_ WinToastError* error) {
     if (createShortcut() < 0) {
         setError(error, WinToastError::ShellLinkNotCreated);
         DEBUG_MSG(L"Error while attaching the AUMI to the current proccess =(");
-        return false;
+        // don't fail it could still work
+        // return false;
     }
 
     if (FAILED(DllImporter::SetCurrentProcessExplicitAppUserModelID(_aumi.c_str()))) {
@@ -636,6 +638,10 @@ INT64 WinToast::showToast(_In_ const WinToastTemplate& toast, _In_  IWinToastHan
                                 (toast.duration() == WinToastTemplate::Duration::Short) ? L"short" : L"long");
                         }
 
+                        if (SUCCEEDED(hr)) {
+                            hr = addScenarioHelper(xmlDocument.Get(), L"reminder");
+                        }
+
                     } else {
                         DEBUG_MSG("Modern features (Actions/Sounds/Attributes) not supported in this os version");
                     }
@@ -779,6 +785,28 @@ HRESULT WinToast::addDurationHelper(_In_ IXmlDocument *xml, _In_ const std::wstr
                 if (SUCCEEDED(hr)) {
                     hr = toastElement->SetAttribute(WinToastStringWrapper(L"duration").Get(),
                                                     WinToastStringWrapper(duration).Get());
+                }
+            }
+        }
+    }
+    return hr;
+}
+
+HRESULT WinToast::addScenarioHelper(_In_ IXmlDocument *xml, _In_ const std::wstring& scenario) {
+    ComPtr<IXmlNodeList> nodeList;
+    HRESULT hr = xml->GetElementsByTagName(WinToastStringWrapper(L"toast").Get(), &nodeList);
+    if (SUCCEEDED(hr)) {
+        UINT32 length;
+        hr = nodeList->get_Length(&length);
+        if (SUCCEEDED(hr)) {
+            ComPtr<IXmlNode> toastNode;
+            hr = nodeList->Item(0, &toastNode);
+            if (SUCCEEDED(hr)) {
+                ComPtr<IXmlElement> toastElement;
+                hr = toastNode.As(&toastElement);
+                if (SUCCEEDED(hr)) {
+                    hr = toastElement->SetAttribute(WinToastStringWrapper(L"scenario").Get(),
+                                                    WinToastStringWrapper(scenario).Get());
                 }
             }
         }

@@ -156,6 +156,7 @@ namespace WinToastLib {
         HRESULT setAttributionTextFieldHelper(_In_ IXmlDocument *xml, _In_ const std::wstring& text);
         HRESULT addActionHelper(_In_ IXmlDocument *xml, _In_ const std::wstring& action, _In_ const std::wstring& arguments);
         HRESULT addDurationHelper(_In_ IXmlDocument *xml, _In_ const std::wstring& duration);
+        HRESULT addScenarioHelper(_In_ IXmlDocument *xml, _In_ const std::wstring& scenario);
         ComPtr<IToastNotifier> notifier(_In_ bool* succeded) const;
         void setError(_Out_ WinToastError* error, _In_ WinToastError value);
     };
